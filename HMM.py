@@ -36,12 +36,67 @@ class HMM:
         and emission (basename.emit) files,
         as well as the probabilities."""
 
+        trans_file = open(basename+'.trans', 'r')
+        emission_file = open(basename+'.emit', 'r')
 
+        while True :
+            line = trans_file.readline()
+            line_array = line.split()
+            if not line:
+                break
 
+            if line_array[0] in self.transitions:
+                inner_dict = self.transitions.get(line_array[0])
+                inner_dict[line_array[1]] = float(line_array[2])
+            else:
+                inner_dict = {}
+                inner_dict[line_array[1]] = float(line_array[2])
+
+                self.transitions[line_array[0]] = inner_dict
+
+        trans_file.close()
+
+        while True :
+            line = emission_file.readline()
+            line_array = line.split()
+            if not line:
+                break
+
+            if line_array[0] in self.emissions:
+                inner_dict = self.emissions.get(line_array[0])
+                inner_dict[line_array[1]] = float(line_array[2])
+            else:
+                inner_dict = {}
+                inner_dict[line_array[1]] = float(line_array[2])
+
+                self.emissions[line_array[0]] = inner_dict
+
+        emission_file.close()
+
+        # print(self.transitions)
    ## you do this.
     def generate(self, n):
         """return an n-length observation by randomly sampling from this HMM."""
+        start_state = '#'
+        count = 0
+        list_trans = []
+        list_emission = []
+        while count!=n:
+            if start_state in self.transitions:
+                inner_dict = self.transitions[start_state]
+                list_of_values = list(inner_dict)
+                random_value = random.choices(list_of_values, k=1)
+                list_trans.append(random_value[0]) #Taking 0th element as random.choices return a list and we have k=1 ie one value we get it from random_value[0]
+                start_state = random_value[0]
 
+            count+=1
+
+        for item in list_trans:
+            if item in self.emissions:
+                inner_dict = self.emissions[item]
+                list_of_values = list(inner_dict)
+                random_value = random.choices(list_of_values, k=1)
+                list_emission.append(random_value[0])
 
 
     ## you do this: Implement the Viterbi alborithm. Given an Observation (a list of outputs or emissions)
@@ -53,7 +108,7 @@ class HMM:
         the output sequence, using the Viterbi algorithm.
         """
 
+model = HMM()
+model.load('partofspeech.browntags.trained')
 
-
-
-
+model.generate(10)
