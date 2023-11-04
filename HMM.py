@@ -4,6 +4,8 @@ import random
 import argparse
 import codecs
 import os
+import sys
+
 import numpy as np
 
 
@@ -22,6 +24,27 @@ def call_forward(file_name):
             model.forward(obs)
             # Create a new file and write the obs object to the file
             output_file = open('ambiguous_sents.output.obs', 'a')
+            output_file.write(str(obs))
+            output_file.close()
+        count += 1
+    # print('No of words', word_count)
+    file.close()
+
+def call_viterbi(file_name):
+    file = open(file_name)
+
+    count = 0
+    word_count = 0
+    while True:
+        line = file.readline()
+        if not line:
+            break
+        if count % 2 != 0:
+            words_array = line.split()
+            obs = Observation([], words_array)
+            model.viterbi(obs)
+            # Create a new file and write the obs object to the file
+            output_file = open('ambiguous_sents.viterbi.output.obs', 'a')
             output_file.write(str(obs))
             output_file.close()
         count += 1
@@ -175,7 +198,7 @@ class HMM:
                 #     continue
                 # else:
                 probability = 0
-                key = row_list[i]
+                key = row_list[i]#states
                 if key in self.emissions:
                     inner_dict_emit = self.emissions[key]
                     if col_list[j] in inner_dict_emit:
@@ -216,35 +239,6 @@ class HMM:
             index_2 = row_list.index('#')
             if (element == '#'):
                 row_list[index_1], row_list[index_2] = row_list[index_2], row_list[index_1]
-
-        row = len(row_list)
-        col = len(col_list)
-
-        # for j in range(1, col):
-        #     for i in range(1, row):
-        #         # if(i==0 or j == 0):
-        #         #     continue
-        #         # else:
-        #         probability = 0
-        #         key = row_list[i]
-        #         if key in self.emissions:
-        #             inner_dict_emit = self.emissions[key]
-        #             if col_list[j] in inner_dict_emit:
-        #                 p1 = inner_dict_emit[col_list[j]]
-        #                 inner_dict_trans = self.transitions[row_list[i]]
-        #                 for k in range(1, row):
-        #                     # if k == 0:
-        #                     #     continue
-        #                     p2 = inner_dict_trans[row_list[k]]
-        #                     probability += p1*p2*matrix[k][j-1]
-        #                 matrix[i][j] = probability
-
-        # inner_dict = self.emissions['ADV']
-        # ob = 'secondly'
-        # if(ob in inner_dict):
-        #     print(inner_dict[ob])
-        # else:
-        #     print(ob, 'not found')
         col = len(col_list)
         row = len(row_list)
         matrix = [[0 for _ in range(col)] for _ in range(row)]
@@ -254,11 +248,13 @@ class HMM:
         # for row in matrix:
         #     if(row)
         #     print(row[0])
+        backpointers[0][0] = 0
         for i in range(1, row):
             # if(i == 0):
             #     continue
             # else:
             key = row_list[i]
+
             if key in self.emissions:
                 inner_dict_emit = self.emissions[key]
                 first_column = col_list[0]
@@ -270,31 +266,68 @@ class HMM:
                     matrix[i][0] = probability
                 else:
                     matrix[i][0] = 0
-        for i in range(row):
             backpointers[i][0] = 0
 
+        max_value = -1.0
+        local_max_state = -sys.maxsize -1
+        max_state = -sys.maxsize -1
+
+        for j in range(1, col):#observations
+            for i in range(1, row):#states
+                # if(i==0 or j == 0):
+                #     continue
+                # else:
+                probability = 0
+                key = row_list[i]
+                if key in self.emissions:
+                    inner_dict_emit = self.emissions[key]
+                    if col_list[j] in inner_dict_emit:
+                        p1 = inner_dict_emit[col_list[j]]
+                        inner_dict_trans = self.transitions[row_list[i]]
+                        for k in range(1, row):#states
+                            # if k == 0:
+                            #     continue
+                            p2 = inner_dict_trans[row_list[k]]
+                            probability = p1*p2*matrix[k][j-1]
+                            if(probability>max_value):
+                                max_value = probability
+                                max_state = k
+                        matrix[i][j] = max_value
+                        max_value = -1.0
+                        backpointers[i][j] = max_state
+        # print(backpointers)
+
+        numpy_matrix = np.array(matrix)
+        max_row = numpy_matrix.argmax(axis=0)
+        # print(row_list[8])
+        max_element = [row_list[element] for element in max_row]
+        observation.stateseq = max_element
 
 if __name__ == '__main__':
     model = HMM()
     # model.load('partofspeech.browntags.trained')
 
     # model.generate(10)
-    obs_words = ["the",  "train", "is",  "arriving",  "now"]
+    obs_words = ["i",  "shot", "the",  "elephant",  "."]
     obs = Observation([], obs_words)
 
-    # model.forward(obs)
     # model.forward('ambiguous_sents.obs')
 
     parser = argparse.ArgumentParser(description='Reading from terminal')
     parser.add_argument('--generate', type=int, help='run generate method')
     parser.add_argument('filename', type=str, help='file')
     parser.add_argument('--forward', type=str, help='obs file')
+    parser.add_argument('--viterbi', type=str, help='obs file')
+
     args = parser.parse_args()
     # print(args.forward)
     model.load(args.filename)
-    model.generate(args.generate)
+    # model.forward(obs)
+
+    # model.generate(args.generate)
 
     # call_forward(args.forward)
 
+    call_viterbi(args.viterbi)
     # model.viterbi(obs)
 
