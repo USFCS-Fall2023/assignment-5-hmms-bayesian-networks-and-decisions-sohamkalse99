@@ -320,14 +320,14 @@ if __name__ == '__main__':
     parser.add_argument('--viterbi', type=str, help='obs file')
 
     args = parser.parse_args()
-    # print(args.forward)
+    # print(args.filename)
     model.load(args.filename)
     # model.forward(obs)
 
     # model.generate(args.generate)
 
-    # call_forward(args.forward)
+    call_forward(args.forward)
 
     call_viterbi(args.viterbi)
-    # model.viterbi(obs)
+    # model.vxiterbi(obs)
 

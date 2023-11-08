@@ -1,6 +1,8 @@
 import HMM as hmm_class
 from HMM import HMM
 from HMM import Observation
+import alarm
+import carnet
 
 def call_forward(file_name):
     file = open(file_name)
@@ -56,3 +58,4 @@ if __name__ == '__main__':
     call_forward(obs_filename)
     print('===============Call Viterbi=============')
     call_viterbi(obs_filename)
+
